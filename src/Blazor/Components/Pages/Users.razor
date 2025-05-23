@@ -1,0 +1,108 @@
+@page "/users"
+@rendermode InteractiveServer
+@using MediatR
+@using Application.Users.Commands
+@using Application.Users.Queries
+@using Application.Common.ResponseModel
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.Extensions.Logging
+@using Microsoft.AspNetCore.Components
+
+@inject IMediator Mediator
+@inject ILogger<Users> Logger
+
+<h1>Users</h1>
+
+<EditForm FormName="createUserForm" Model="_createUserModel" OnValidSubmit="CreateUserAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label" for="name">Name:</label>
+        <InputText id="name" class="form-control" @bind-Value="_createUserModel.Name" 
+                   @oninput="(ChangeEventArgs e) => { _createUserModel.Name = e.Value?.ToString() ?? string.Empty; }" />
+        <ValidationMessage For="@(() => _createUserModel.Name)" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="email">Email:</label>
+        <InputText id="email" class="form-control" @bind-Value="_createUserModel.Email" 
+                   @oninput="(ChangeEventArgs e) => { _createUserModel.Email = e.Value?.ToString() ?? string.Empty; }" />
+        <ValidationMessage For="@(() => _createUserModel.Email)" />
+    </div>
+    <button type="submit" class="btn btn-primary">Create User</button>
+</EditForm>
+
+<hr />
+
+@if (_isLoadingUsers) // Added a flag for better loading UX
+{
+    <p><em>Loading users...</em></p>
+}
+else if (_users is null || !_users.Any())
+{
+    <p>No users found.</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var user in _users)
+        {
+            <li class="list-group-item">@user.Name (@user.Email)</li>
+        }
+    </ul>
+}
+
+@code {
+    private CreateUserModel _createUserModel = new();
+    private IEnumerable<GetUserResponse>? _users;
+    private bool _isLoadingUsers = true; // Flag for loading state
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task CreateUserAsync()
+    {
+        Logger.LogInformation("Attempting to create user - Name: {Name}, Email: {Email}", _createUserModel.Name, _createUserModel.Email);
+        
+        var result = await Mediator.Send(new CreateUserCommand(_createUserModel.Name, _createUserModel.Email));
+        if (result.IsSuccess)
+        {
+            Logger.LogInformation("User created successfully.");
+            await LoadUsersAsync(); 
+        }
+        else
+        {
+            Logger.LogError("Failed to create user: {Error}", result.Error);
+        }
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _isLoadingUsers = true; 
+        Logger.LogInformation("Loading all users");
+        var result = await Mediator.Send(new GetAllUsersQuery());
+        if (result.IsSuccess)
+        {
+            _users = result.Value;
+            Logger.LogInformation("Successfully loaded {Count} users", _users?.Count() ?? 0);
+        }
+        else
+        {
+            _users = Array.Empty<GetUserResponse>(); 
+            Logger.LogError("Failed to load users: {Error}", result.Error);
+        }
+        _isLoadingUsers = false; 
+    }
+
+    private class CreateUserModel
+    {
+        [Required(ErrorMessage = "Name is required.")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+        public string Email { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,16 @@
+
+services:
+  blazor-app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DATABASE_HOST=
+      - DATABASE_PORT=
+      - DATABASE_NAME=
+      - DATABASE_USERNAME=
+      - DATABASE_PASSWORD=
+    restart: always
