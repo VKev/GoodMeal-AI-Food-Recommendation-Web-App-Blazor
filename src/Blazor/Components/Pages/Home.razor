@@ -1,0 +1,53 @@
+@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>GoodMeal - AI Food Recommendation</PageTitle>
+
+<div class="hero-section mb-5">
+    <div class="text-center">
+        <h1 class="display-4 text-primary">🍽️ GoodMeal</h1>
+        <p class="lead">AI-Powered Food Recommendation System</p>
+        <hr class="my-4" />
+        <p>Discover personalized meal recommendations powered by artificial intelligence.</p>
+        <a class="btn btn-primary btn-lg" href="/users" role="button">Manage Users</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">🤖 AI Recommendations</h5>
+                <p class="card-text">Get personalized food recommendations based on your preferences and dietary needs.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">👥 User Management</h5>
+                <p class="card-text">Manage user profiles and track their food preferences and history.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">📊 Analytics</h5>
+                <p class="card-text">View insights and analytics about food preferences and recommendation effectiveness.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-5">
+    <h3>Architecture Information</h3>
+    <div class="alert alert-info">
+        <h5>3-Layer Architecture:</h5>
+        <ul class="mb-0">
+            <li><strong>Presentation Layer:</strong> Blazor WebApp (Current)</li>
+            <li><strong>Business Layer:</strong> Application + Domain Logic</li>
+            <li><strong>Data Access Layer:</strong> Infrastructure with Entity Framework</li>
+        </ul>
+    </div>
+</div> 

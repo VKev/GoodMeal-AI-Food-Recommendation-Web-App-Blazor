@@ -1,56 +1,99 @@
-# Clean Architecture Template for .NET
+# GoodMeal - AI Food Recommendation Web App
 
-A **Clean Architecture** template for the .NET framework, designed to provide a solid foundation for starting new projects. It comes with a pre-implemented simple REST API.
+> **Kiến trúc 3-Layer với Blazor WebApp và PostgreSQL Database**
 
----
-
-## How to Use
-
-1. Clone this repository.
-2. Create a `.env` file in the `src` folder with the following content:
-
-    ```dotenv
-    DATABASE_HOST=your_database_host
-    DATABASE_PORT=your_database_port
-    DATABASE_NAME=your_database_name
-    DATABASE_USERNAME=your_database_username
-    DATABASE_PASSWORD=your_database_password
-    ```
-
-3. Clean and build the solution before running the application:
-
-    ```bash
-    cd src/WebApi
-    dotnet clean
-    dotnet build
-    dotnet run
-    ```
-
-    The application will automatically scaffold entities and generate the necessary migrations when detected changed in database.
-
-    To scaffold and migration when needed even database not change, please delete `track` folder in `src/infrastructure/Build` and `dotnet run` again.
+Dự án **GoodMeal** được xây dựng theo kiến trúc 3-layer, sử dụng Blazor WebApp cho giao diện người dùng và PostgreSQL database được host trên Docker.
 
 ---
 
-## Running Tests
+## 🏗️ Kiến trúc 3-Layer
 
-To execute the tests, navigate to the test directory and run the following command:
+### 1. 🖥️ **Presentation Layer (Blazor WebApp)**
+- **Thư mục**: `src/Blazor/`
+- **Chức năng**: Giao diện người dùng, routing, và user interactions
+- **Công nghệ**: Blazor Server-Side với Interactive Components
+- **Pages**: 
+  - `/` - Home page
+  - `/users` - User management page
 
-```bash
-cd test
-dotnet test
-```
+### 2. 💼 **Business Layer (Application + Domain)**
+- **Thư mục**: `src/Application/` và `src/Domain/`
+- **Chức năng**: 
+  - **Domain**: Entities, business rules, repository interfaces
+  - **Application**: Services, business logic, và data operations
+- **Công nghệ**: .NET Core với Service pattern
+- **Entities**: User, Role, UserRole, Job
+
+### 3. 💾 **Data Access Layer (Infrastructure)**
+- **Thư mục**: `src/Infrastructure/`
+- **Chức năng**: Database access, repositories, migrations
+- **Công nghệ**: Entity Framework Core với PostgreSQL
+- **Components**: DbContext, Repository implementations, Migrations
 
 ---
 
-## Docker
-
-To build the Docker image, run the following command:
-```bash
-docker build -t test-service .
+# Application Environment
+ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=https://localhost:7001;http://localhost:5001
 ```
 
-To run the container, use this command:
+### Cách cấu hình:
+
+1. **Sao chép file env.example**:
+   ```bash
+   cp env.example .env
+   ```
+
+2. **Cập nhật các giá trị trong .env** theo database của bạn
+
+3. **Load environment variables**:
+   
+   **Windows (PowerShell)**:
+   ```powershell
+   .\scripts\load-env.ps1
+   ```
+   
+   **Linux/macOS**:
+   ```bash
+   chmod +x scripts/load-env.sh
+   source ./scripts/load-env.sh
+   ```
+
+---
+
+## 🚀 Chạy Ứng Dụng
+
+### 🎯 Quick Start (Recommended):
+
+Chúng tôi đã tạo sẵn các script để chạy ứng dụng một cách dễ dàng:
+
+**Linux/macOS**:
 ```bash
-docker run -d -p 5196:8080 -e ASPNETCORE_ENVIRONMENT=Production -e DATABASE_HOST=your_database_host -e DATABASE_PORT=your_database_port -e DATABASE_NAME=your_database_name -e DATABASE_USERNAME=your_database_username -e DATABASE_PASSWORD=your_database_password --name test-service test-service
+# Cấp quyền executable cho script (chỉ cần làm 1 lần)
+chmod +x run-app.sh
+
+# Chạy ứng dụng
+./run-app.sh
 ```
+
+**Windows (PowerShell)**:
+```powershell
+# Chạy ứng dụng
+.\run-app.ps1
+```
+
+### 📋 Những gì script sẽ làm:
+
+1. **🔧 Thiết lập Environment Variables**: Automatically configure database connection
+2. **🏗️ Build Project**: Compile và prepare ứng dụng
+3. **🚀 Start Server**: Khởi động Blazor server
+4. **📊 Database Connection**: Kết nối tới PostgreSQL database trên Docker
+
+### 📱 Truy cập ứng dụng:
+
+Sau khi script chạy thành công, bạn có thể truy cập:
+
+- **🏠 Home Page**: http://localhost:5086/
+- **👥 Users Management**: http://localhost:5086/users
+- **📝 Create/Edit Users**: Full CRUD operations
+

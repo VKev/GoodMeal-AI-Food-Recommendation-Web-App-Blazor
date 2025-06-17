@@ -1,10 +1,8 @@
 using Application;
 using Blazor.Components;
-using Blazor.Configs;
 using Infrastructure;
 using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,31 +16,34 @@ builder.Host.UseSerilog((hostingContext, loggerConfiguration) =>
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Authorization (optional, keeps parity with WebApi)
+// Authorization
 builder.Services.AddAuthorization();
 
-// Database configuration
-builder.Services.ConfigureOptions<DatabaseConfigSetup>();
-builder.Services.AddDbContext<MyDbContext>((serviceProvider, options) =>
+// Configure Database from Environment Variables
+var connectionString = GetConnectionStringFromEnvironment();
+
+builder.Services.AddDbContext<MyDbContext>(options =>
 {
-    var databaseConfig = serviceProvider.GetService<IOptions<DatabaseConfig>>()!.Value;
-    options.UseNpgsql(databaseConfig.ConnectionString, actions =>
+    options.UseNpgsql(connectionString, npgsqlOptions =>
     {
-        actions.EnableRetryOnFailure(databaseConfig.MaxRetryCount);
-        actions.CommandTimeout(databaseConfig.CommandTimeout);
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: GetEnvInt("DATABASE_MAX_RETRY_COUNT", 3));
+        npgsqlOptions.CommandTimeout(
+            GetEnvInt("DATABASE_COMMAND_TIMEOUT", 30));
     });
 
     if (environment.IsDevelopment())
     {
-        options.EnableDetailedErrors(databaseConfig.EnableDetailedErrors);
-        options.EnableSensitiveDataLogging(databaseConfig.EnableSensitiveDataLogging);
+        options.EnableDetailedErrors(GetEnvBool("DATABASE_ENABLE_DETAILED_ERRORS", true));
+        options.EnableSensitiveDataLogging(GetEnvBool("DATABASE_ENABLE_SENSITIVE_DATA_LOGGING", false));
     }
 });
 
-// Register application & infrastructure layers
-builder.Services
-    .AddApplication()
-    .AddInfrastructure();
+// Register Business Layer (Application + Domain)
+builder.Services.AddApplication();
+
+// Register Data Access Layer (Infrastructure)
+builder.Services.AddInfrastructure();
 
 var app = builder.Build();
 
@@ -64,6 +65,26 @@ app.MapRazorComponents<App>()
 
 app.Run();
 
-// Update connection string in appsettings at runtime (helps local dev)
-Infrastructure.Utils.AutoScaffold.UpdateAppSettingsFile("appsettings.json", "default");
-Infrastructure.Utils.AutoScaffold.UpdateAppSettingsFile("appsettings.Development.json", "default");
+// Helper methods for environment configuration
+static string GetConnectionStringFromEnvironment()
+{
+    var host = Environment.GetEnvironmentVariable("DATABASE_HOST") ?? "localhost";
+    var port = Environment.GetEnvironmentVariable("DATABASE_PORT") ?? "5432";
+    var database = Environment.GetEnvironmentVariable("DATABASE_NAME") ?? "goodmeal_db";
+    var username = Environment.GetEnvironmentVariable("DATABASE_USERNAME") ?? "postgres";
+    var password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD") ?? "password";
+    
+    return $"Host={host};Port={port};Database={database};Username={username};Password={password};";
+}
+
+static int GetEnvInt(string key, int defaultValue)
+{
+    var value = Environment.GetEnvironmentVariable(key);
+    return int.TryParse(value, out var result) ? result : defaultValue;
+}
+
+static bool GetEnvBool(string key, bool defaultValue)
+{
+    var value = Environment.GetEnvironmentVariable(key);
+    return bool.TryParse(value, out var result) ? result : defaultValue;
+}

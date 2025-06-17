@@ -1,14 +1,13 @@
 @page "/users"
 @rendermode InteractiveServer
-@using MediatR
-@using Application.Users.Commands
+@using Application.Services
 @using Application.Users.Queries
 @using Application.Common.ResponseModel
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.Extensions.Logging
 @using Microsoft.AspNetCore.Components
 
-@inject IMediator Mediator
+@inject IUserService UserService
 @inject ILogger<Users> Logger
 
 <h1>Users</h1>
@@ -34,7 +33,7 @@
 
 <hr />
 
-@if (_isLoadingUsers) // Added a flag for better loading UX
+@if (_isLoadingUsers)
 {
     <p><em>Loading users...</em></p>
 }
@@ -47,7 +46,12 @@ else
     <ul class="list-group">
         @foreach (var user in _users)
         {
-            <li class="list-group-item">@user.Name (@user.Email)</li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@user.Name (@user.Email)</span>
+                <button class="btn btn-danger btn-sm" @onclick="() => DeleteUserAsync(user.UserId)">
+                    Delete
+                </button>
+            </li>
         }
     </ul>
 }
@@ -55,7 +59,7 @@ else
 @code {
     private CreateUserModel _createUserModel = new();
     private IEnumerable<GetUserResponse>? _users;
-    private bool _isLoadingUsers = true; // Flag for loading state
+    private bool _isLoadingUsers = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,10 +70,11 @@ else
     {
         Logger.LogInformation("Attempting to create user - Name: {Name}, Email: {Email}", _createUserModel.Name, _createUserModel.Email);
         
-        var result = await Mediator.Send(new CreateUserCommand(_createUserModel.Name, _createUserModel.Email));
+        var result = await UserService.CreateUserAsync(_createUserModel.Name, _createUserModel.Email);
         if (result.IsSuccess)
         {
             Logger.LogInformation("User created successfully.");
+            _createUserModel = new(); // Reset form
             await LoadUsersAsync(); 
         }
         else
@@ -78,11 +83,28 @@ else
         }
     }
 
+    private async Task DeleteUserAsync(Guid userId)
+    {
+        Logger.LogInformation("Attempting to delete user: {UserId}", userId);
+        
+        var result = await UserService.DeleteUserAsync(userId);
+        if (result.IsSuccess)
+        {
+            Logger.LogInformation("User deleted successfully.");
+            await LoadUsersAsync();
+        }
+        else
+        {
+            Logger.LogError("Failed to delete user: {Error}", result.Error);
+        }
+    }
+
     private async Task LoadUsersAsync()
     {
         _isLoadingUsers = true; 
         Logger.LogInformation("Loading all users");
-        var result = await Mediator.Send(new GetAllUsersQuery());
+        
+        var result = await UserService.GetAllUsersAsync();
         if (result.IsSuccess)
         {
             _users = result.Value;
